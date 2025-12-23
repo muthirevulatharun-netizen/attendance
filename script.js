@@ -1,143 +1,171 @@
-// ===================== CONFIG =====================
-const API_BASE_URL = 'https://mitsims.in';
-
-// ===================== STATE ======================
-let cachedAttendance = null;
-
-// ===================== DOM =========================
-const loginForm = document.getElementById('loginForm');
-const loginSection = document.getElementById('loginSection');
-const attendanceSection = document.getElementById('attendanceSection');
-const errorMessage = document.getElementById('errorMessage');
-const logoutBtn = document.getElementById('logoutBtn');
-const calculateSkipBtn = document.getElementById('calculateSkipBtn');
-const skipResults = document.getElementById('skipResults');
-const skipDetails = document.getElementById('skipDetails');
-
-// ===================== INIT ========================
-document.addEventListener('DOMContentLoaded', () => {
-    const user = localStorage.getItem('loggedInUser');
-    const storedData = localStorage.getItem('attendanceData');
-    if (user && storedData) {
-        try {
-            const parsed = JSON.parse(storedData);
-            cachedAttendance = parsed;
-            displayAttendance(user, parsed.subjects, parsed.studentName);
-        } catch (err) {
-            console.error('Failed to restore cached attendance', err);
-            localStorage.removeItem('attendanceData');
+class TicTacToe {
+    constructor() {
+        this.board = ['', '', '', '', '', '', '', '', ''];
+        this.currentPlayer = 'X';
+        this.gameActive = true;
+        this.scores = { X: 0, O: 0 };
+        
+        this.winningConditions = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6]
+        ];
+        
+        this.initializeGame();
+    }
+    
+    initializeGame() {
+        this.createBoard();
+        this.bindEvents();
+        this.updateDisplay();
+    }
+    
+    createBoard() {
+        const gameBoard = document.querySelector('.game-board');
+        gameBoard.innerHTML = '';
+        
+        for (let i = 0; i < 9; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.setAttribute('data-index', i);
+            gameBoard.appendChild(cell);
         }
     }
-    loginForm.addEventListener('submit', handleLogin);
-    logoutBtn.addEventListener('click', handleLogout);
-    calculateSkipBtn?.addEventListener('click', calculateSkipDays);
+    
+    bindEvents() {
+        const cells = document.querySelectorAll('.cell');
+        const resetButton = document.getElementById('reset-game');
+        const resetScoreButton = document.getElementById('reset-score');
+        
+        cells.forEach(cell => {
+            cell.addEventListener('click', this.handleCellClick.bind(this));
+        });
+        
+        resetButton.addEventListener('click', this.resetGame.bind(this));
+        resetScoreButton.addEventListener('click', this.resetScore.bind(this));
+    }
+    
+    handleCellClick(event) {
+        const cell = event.target;
+        const cellIndex = parseInt(cell.getAttribute('data-index'));
+        
+        if (this.board[cellIndex] !== '' || !this.gameActive) {
+            return;
+        }
+        
+        this.makeMove(cellIndex, cell);
+    }
+    
+    makeMove(index, cellElement) {
+        this.board[index] = this.currentPlayer;
+        cellElement.textContent = this.currentPlayer;
+        cellElement.classList.add(this.currentPlayer.toLowerCase());
+        
+        if (this.checkWinner()) {
+            this.gameActive = false;
+            this.scores[this.currentPlayer]++;
+            this.highlightWinningCells();
+            this.updateGameStatus(`Player ${this.currentPlayer} wins! 🎉`);
+            this.updateScoreDisplay();
+        } else if (this.checkDraw()) {
+            this.gameActive = false;
+            this.updateGameStatus("It's a draw! 🤝");
+        } else {
+            this.switchPlayer();
+            this.updateGameStatus(`Player ${this.currentPlayer}'s turn`);
+        }
+    }
+    
+    checkWinner() {
+        for (let condition of this.winningConditions) {
+            const [a, b, c] = condition;
+            if (this.board[a] && this.board[a] === this.board[b] && this.board[a] === this.board[c]) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    checkDraw() {
+        return this.board.every(cell => cell !== '');
+    }
+    
+    highlightWinningCells() {
+        for (let condition of this.winningConditions) {
+            const [a, b, c] = condition;
+            if (this.board[a] && this.board[a] === this.board[b] && this.board[a] === this.board[c]) {
+                const cells = document.querySelectorAll('.cell');
+                cells[a].classList.add('winning');
+                cells[b].classList.add('winning');
+                cells[c].classList.add('winning');
+                break;
+            }
+        }
+    }
+    
+    switchPlayer() {
+        this.currentPlayer = this.currentPlayer === 'X' ? 'O' : 'X';
+        this.updateDisplay();
+    }
+    
+    updateDisplay() {
+        document.getElementById('current-player').textContent = this.currentPlayer;
+        document.getElementById('current-player').style.color = this.currentPlayer === 'X' ? '#e74c3c' : '#3498db';
+    }
+    
+    updateGameStatus(message) {
+        const statusElement = document.getElementById('game-status');
+        statusElement.textContent = message;
+        statusElement.className = 'game-status';
+        
+        if (message.includes('wins')) {
+            statusElement.classList.add('winner');
+        } else if (message.includes('draw')) {
+            statusElement.classList.add('draw');
+        } else {
+            statusElement.classList.add('current-turn');
+        }
+    }
+    
+    updateScoreDisplay() {
+        document.getElementById('score-x').textContent = this.scores.X;
+        document.getElementById('score-o').textContent = this.scores.O;
+    }
+    
+    resetGame() {
+        this.board = ['', '', '', '', '', '', '', '', ''];
+        this.currentPlayer = 'X';
+        this.gameActive = true;
+        
+        const cells = document.querySelectorAll('.cell');
+        cells.forEach(cell => {
+            cell.textContent = '';
+            cell.className = 'cell';
+        });
+        
+        this.updateDisplay();
+        this.updateGameStatus(`Player ${this.currentPlayer}'s turn`);
+    }
+    
+    resetScore() {
+        this.scores = { X: 0, O: 0 };
+        this.updateScoreDisplay();
+        this.resetGame();
+    }
+}
+
+// Initialize the game when the DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    new TicTacToe();
 });
 
-// ===================== API ========================
-async function fetchAttendanceFromMITS(rollNumber, password) {
-    const response = await fetch(`${API_BASE_URL}/api/attendance`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rollNumber, password })
-    });
 
-    if (!response.ok) {
-        throw new Error('Login failed');
-    }
 
-    const data = await response.json();
 
-    // Expected response:
-    // { studentName: "Surya Raju", attendance: [{ subject, present, total }, ...] }
-    const subjects = data.attendance || data.subjects || data || [];
-    const studentName = data.studentName || data.name || rollNumber;
 
-    return { studentName, subjects };
-}
 
-// ===================== LOGIN =======================
-async function handleLogin(e) {
-    e.preventDefault();
-    const roll = document.getElementById('rollNumber').value.trim();
-    const pass = document.getElementById('password').value;
-
-    try {
-        errorMessage.textContent = 'Signing in...';
-        const attendanceData = await fetchAttendanceFromMITS(roll, pass);
-        cachedAttendance = attendanceData;
-        localStorage.setItem('loggedInUser', roll);
-        localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
-        displayAttendance(roll, attendanceData.subjects, attendanceData.studentName);
-        errorMessage.textContent = '';
-    } catch (err) {
-        console.error(err);
-        errorMessage.textContent = 'Invalid Register Number or Password';
-    }
-}
-
-// ===================== DISPLAY ====================
-function displayAttendance(roll, subjects, studentName = roll) {
-    document.getElementById('displayRoll').textContent = roll;
-    document.getElementById('displayName').textContent = studentName;
-
-    const list = document.getElementById('attendanceList');
-    list.innerHTML = '';
-
-    let totalPercent = 0;
-
-    subjects.forEach(sub => {
-        const percent = sub.total > 0
-            ? Math.round((sub.present / sub.total) * 100)
-            : 0;
-
-        totalPercent += percent;
-
-        list.innerHTML += `
-            <div class="attendance-item">
-                <h4>${sub.subject} ${percent < 75 ? '⚠️' : '✅'}</h4>
-                <p>Present: ${sub.present} / ${sub.total}</p>
-                <strong>${percent}%</strong>
-            </div>
-        `;
-    });
-
-    document.getElementById('overallAverage').textContent =
-        subjects.length ? (totalPercent / subjects.length).toFixed(1) + '%' : '0%';
-
-    loginSection.classList.remove('active');
-    attendanceSection.classList.add('active');
-}
-
-// ===================== SKIP =======================
-function calculateSkipDays() {
-    const user = localStorage.getItem('loggedInUser');
-    if (!user || !cachedAttendance) return;
-
-    skipDetails.innerHTML = '';
-
-    cachedAttendance.subjects.forEach(sub => {
-        const percent = sub.total > 0 ? (sub.present / sub.total) * 100 : 0;
-
-        let canSkip = percent >= 75
-            ? Math.max(Math.floor((sub.total * 0.25) - (sub.total - sub.present)), 0)
-            : 0;
-
-        skipDetails.innerHTML += `
-            <div class="skip-item">
-                <strong>${sub.subject}</strong> → Can skip: ${canSkip}
-            </div>
-        `;
-    });
-
-    skipResults.style.display = 'block';
-}
-
-// ===================== LOGOUT =====================
-function handleLogout() {
-    localStorage.removeItem('loggedInUser');
-    localStorage.removeItem('attendanceData');
-    cachedAttendance = null;
-    attendanceSection.classList.remove('active');
-    loginSection.classList.add('active');
-    skipResults.style.display = 'none';
-}
